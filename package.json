@@ -1,0 +1,24 @@
+{
+  "name": "bot-telegram-airdrop",
+  "version": "1.0.0",
+  "description": "bot-telegram-airdrop",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "author": "tuandung && xuancanh",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.24.0",
+    "body-parser": "^1.19.0",
+    "dotenv": "^10.0.0",
+    "mongoose": "^6.0.14",
+    "node-telegram-bot-api": "^0.54.0",
+    "web3": "^1.6.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
