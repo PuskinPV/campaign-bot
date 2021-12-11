@@ -82,16 +82,20 @@ const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
 
 // Check Valid Twitter
 const checkValidTwitter = async(username) => {
-	// username format: @username
-	const pureUsername = username.match(/[\w]+/)?.[0] || ''
+	// Return object with keys {isValid, twitterId}
 	try {
-		const res = await axios.get(`https://api.twitter.com/2/users/by/username/${pureUsername}`)
-		const userId = res.data.data?.id
-		return typeof userId !== 'undefined'
+		const res = await axios.get(`https://api.twitter.com/2/users/by/username/${username}`)
+		const twitterId = res.data.data?.id
+		return {
+			isValid: typeof twitterId !== 'undefined',
+			twitterId: twitterId
+		}
 	} catch (err) {
 		// Ignore
 		console.log(err.response.data)
-		return true
+		return {
+			isValid: true
+		}
 	}
 }
 
@@ -127,7 +131,6 @@ bot.onText(/.*/, async(msg) => {
 		case STATE.CAPTCHA:
 			// Check Captcha
 			const isPassCaptcha = checkCaptcha(a, b, msg.text)
-			console.log(isPassCaptcha)
 			if (isPassCaptcha) {
 				bot.sendMessage(msg.chat.id, 
 					'Please complete the following tasks.',
@@ -152,7 +155,7 @@ bot.onText(/.*/, async(msg) => {
 				// 		console.log(state)
 				// 	}
 				// })
-				state += 1;
+				state = STATE.JOIN_IN;
 
 			} else {
 				bot.sendMessage(msg.chat.id, '❌ Wrong verification code. Please enter correct verification code.')
@@ -166,7 +169,6 @@ bot.onText(/.*/, async(msg) => {
 				
 				if (isJoinedTelegrams) {
 					bot.sendMessage(msg.chat.id, 'Please send your twitter username begins with the “@”')
-					state += 1
 				} else {
 					bot.sendMessage(msg.chat.id, 'You have unfinished tasks. Please complete tasks and press Confirm.')
 				}
@@ -178,11 +180,25 @@ bot.onText(/.*/, async(msg) => {
 		// Check Twitter (state 3)
 		case STATE.TWITTER:
 			if (REGEX_FLOW.TWITTER.test(msg.text)) {
-				const isValidTwitter = await checkValidTwitter(msg.text)
-				// console.log(isValidTwitter, msg.text)
-				if (isValidTwitter) {
-          bot.sendMessage(msg.chat.id, 'Send your Binance Smart Chain (BEP20) wallet address. (Do not send address from exchange)')
-					state += 1
+				const username = msg.text.match(/[\w]+/)?.[0] || ''
+				const { isValid, twitterId } = await checkValidTwitter(username)
+				if (isValid) {
+					const existsUser = await findUser({ twitterId: twitterId })
+					if (existsUser && existsUser.telegramId != msg.chat.id) {
+						// check if this twitter has been taken by another
+						bot.sendMessage(msg.chat.id, 'Your twitter has been used by another!')
+					} else {
+						// Save [twitterId, twitterUsername] to database
+						updateUser({
+							telegramId: msg.chat.id,
+							twitterId: twitterId,
+							twitterUsername: username
+						})
+
+						// Next step
+						bot.sendMessage(msg.chat.id, 'Send your Binance Smart Chain (BEP20) wallet address. (Do not send address from exchange)')
+						state = STATE.WALLET
+					}
 					break
 				}
 			}
@@ -198,13 +214,13 @@ bot.onText(/.*/, async(msg) => {
 					bot.sendMessage(msg.chat.id, 
 						'Congratulations! 🎉\n' +
 						'You have successfully registered for MRS Airdrop.\n\n' +
-						'Your Referral Link 👇' +
+						'Your Referral Link 👇\n' +
 						`${BOT_URL}?start=${msg.chat.id}`
 					)
-				} else {
-					bot.sendMessage(msg.chat.id, '❌ Invalid BEP20 wallet address, please send correct BEP20 wallet address.')
+					break
 				}
 			}
+			bot.sendMessage(msg.chat.id, '❌ Invalid BEP20 wallet address, please send correct BEP20 wallet address.')
 			break
 	}
 });
@@ -214,8 +230,16 @@ bot.on("callback_query",async (data)=>{
 	if(data?.data == 'CONFIRM'){
 		const isJoinedTelegrams = await checkJoinedTelegrams(data.message.chat.id,TELEGRAM_LIST);
 		if (isJoinedTelegrams) {
+			// Save username & isJoinedTelegrams to database
+			updateUser({
+				telegramId: data.message.chat.id,
+				username: data.message.chat.username,
+				isJoinedTelegrams: true
+			})
+
+			// Next step
 			bot.sendMessage(data.message.chat.id, 'Please send your twitter username begins with the “@”')
-			state += 1
+			state = STATE.TWITTER
 			} else {
 			await bot.answerCallbackQuery(data.id, "You have unfinished tasks. Please complete tasks and press Confirm.", show_alert=true)	
 			// bot.sendMessage(data.message.chat.id, 'You have unfinished tasks. Please complete tasks and press Confirm.')
