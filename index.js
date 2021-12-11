@@ -51,9 +51,25 @@ const STATE = {
 
 var state = STATE.START;
 
-const checkJoinedTelegrams = (telegramId, checkTeleId) => {
-  
-	return true;
+const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
+  // console.log("check",telegramId, checkTeleId);
+	// var res = checkTeleList.reduce(async(pre, checkTeleId) => {
+	// 	const member = bot.getChatMember(checkTeleId, telegramId);
+	// 	console.log(["creator", "administrator", "member"].includes(member.status));
+	// 	return pre && ["creator", "administrator", "member"].includes(member.status);
+	// }, true);
+
+	var checkResultsPromises = checkTeleList.map(checkTeleId => {
+		return bot.getChatMember(checkTeleId, telegramId)
+	})
+
+	const members = await Promise.all(checkResultsPromises)
+	
+	const checkResults = members.reduce((res, member) => {
+		return res && ["creator", "administrator", "member"].includes(member.status)
+	}, true)
+	console.log(checkResults)
+	return checkResults
 }
 
 const checkValidTwitter = (twitterLink) => {
