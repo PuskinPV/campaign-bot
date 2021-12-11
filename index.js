@@ -184,9 +184,18 @@ bot.onText(/.*/, async(msg) => {
 	}
 });
 
-bot.on("callback_query", (data)=>{				
+bot.on("callback_query",async (data)=>{				
+	//press confirm to check all
 	if(data?.data == 'CONFIRM'){
-		console.log(data)
-		
+		const isJoinedTelegrams = await checkJoinedTelegrams(data.message.chat.id,TELEGRAM_LIST);
+		if (isJoinedTelegrams) {
+			bot.sendMessage(data.message.chat.id, 'Please send your twitter username begins with the “@”')
+			state += 1
+			} else {
+			bot.sendMessage(data.message.chat.id, 'You have unfinished tasks. Please complete tasks and press Confirm.')
+			}
+		} else {
+			bot.sendMessage(data.message.chat.id, 'Please Click Confirm Button')
+		}
 	}
-})
+);
