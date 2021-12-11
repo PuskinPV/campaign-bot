@@ -57,9 +57,22 @@ const STATE = {
 
 var state = STATE.START;
 
-const checkJoinedTelegrams = (telegramId, checkTeleId) => {
-  
-	return true;
+//handle callback query data
+
+
+
+const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
+	var checkResultsPromises = checkTeleList.map(checkTeleId => {
+		return bot.getChatMember(checkTeleId, telegramId)
+	})
+
+	const members = await Promise.all(checkResultsPromises)
+	
+	const checkResults = members.reduce((res, member) => {
+		return res && ["creator", "administrator", "member"].includes(member.status)
+	}, true)
+	console.log(checkResults)
+	return checkResults
 }
 
 
@@ -93,6 +106,7 @@ const checkCaptcha = (a, b, result) => {
 let a = Math.floor(Math.random() * 10);
 let b = Math.floor(Math.random() * 10);
 
+
 bot.onText(/.*/, async(msg) => {
 	if (REGEX_FLOW.START.test(msg.text)) {
 		a = Math.floor(Math.random() * 10);
@@ -102,18 +116,39 @@ bot.onText(/.*/, async(msg) => {
 		return
 	}
 	console.log("state", state);
+	
 	switch(state) {
 		// Handle Captcha (state 1)
 		case STATE.CAPTCHA:
 			// Check Captcha
 			const isPassCaptcha = checkCaptcha(a, b, msg.text)
-			
 			if (isPassCaptcha) {
 				bot.sendMessage(msg.chat.id, 
 					'Please complete the following tasks.\n' +
-					'Thereafter press Confirm ✅ button to proceed for the next step.'	
+					'Thereafter press Confirm ✅ button to proceed for the next step.',
+					{
+						reply_markup: {
+							"resize_keyboard":true,
+							"inline_keyboard":[
+								[{ text: 'Join MetaRacers Announcement Channel on Telegram ', url: `https://t.me/${TELEGRAM_CHANNEL}` }],
+								[{ text: 'Join MetaRacers Global community group on Telegram ', url: `https://t.me/${TELEGRAM_GROUP}` }],
+								[{ text: 'Follow MetaRacers on Twitter: ', url: `https://twitter.com/${TWITTER}` }],
+								[{ text: 'Join BSCStation’s Announcement Channel on Telegram:', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
+								[{ text: 'Join  BSCStation’s Global community group on Telegram:', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
+								[{ text: 'Follow BSCStation on Twitter: ', url: `https://twitter.com/${PARTNER_TWITTER}` }],
+								[{ text: 'Retweet the pinned tweet + Share + tag 3 friends in the comment section ', url: PINNED_TWEET_URL }],
+								[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
+							]
+						}
+					}	
 				);
-				state += 1
+				// bot.on("callback_query", (data)=>{				
+				// 	if(data?.data == 'CONFIRM'){
+				// 		console.log(state)
+				// 	}
+				// })
+				state += 1;
+
 			} else {
 				bot.sendMessage(msg.chat.id, '❌ Wrong verification code. Please enter correct verification code.')
 			}
@@ -168,3 +203,21 @@ bot.onText(/.*/, async(msg) => {
 			break
 	}
 });
+
+bot.on("callback_query",async (data)=>{				
+	//press confirm to check all
+	console.log(data);
+	if(data?.data == 'CONFIRM'){
+		const isJoinedTelegrams = await checkJoinedTelegrams(data.message.chat.id,TELEGRAM_LIST);
+		if (isJoinedTelegrams) {
+			bot.sendMessage(data.message.chat.id, 'Please send your twitter username begins with the “@”')
+			state += 1
+			} else {
+			await bot.answerCallbackQuery(data.id, "You have unfinished tasks. Please complete tasks and press Confirm.", show_alert=true)	
+			// bot.sendMessage(data.message.chat.id, 'You have unfinished tasks. Please complete tasks and press Confirm.')
+			}
+		} else {
+			bot.sendMessage(data.message.chat.id, 'Please Click Confirm Button')
+		}
+	}
+);
