@@ -18,6 +18,12 @@ const {
 // Import constants
 const { REGEX_FLOW } = require('./constants')
 
+// Import and Config axios
+const axios = require('axios')
+axios.defaults.headers.common = {
+	'Authorization': `bearer ${TWITTER_BEAR_TOKEN}`
+}
+
 // Init Default Member
 const member = {
 	telegramId: null,
@@ -56,14 +62,28 @@ const checkJoinedTelegrams = (telegramId, checkTeleId) => {
 	return true;
 }
 
-const checkValidTwitter = (twitterLink) => {
 
-	return true;
+// Check Valid Twitter
+const checkValidTwitter = async(username) => {
+	// username format: @username
+	const pureUsername = username.match(/[\w]+/)?.[0] || ''
+	try {
+		const res = await axios.get(`https://api.twitter.com/2/users/by/username/${username}`)
+		const userId = res.data.data?.id
+		return typeof userId !== 'undefined'
+	} catch (err) {
+		// Ignore
+		return true
+	}
 }
 
+// Check Valid Wallet Address
+const Web3 = require('web3')
+const rpcURL = 'https://mainnet.infura.io/v3/2c6976208ef0479dbc1a402db2ceb870'
+const web3 = new Web3(new Web3.providers.HttpProvider(rpcURL));
 const checkWalletAddress = (address) => {
-
-	return true;
+	var isValid = web3.utils.isAddress(address);
+	return isValid;
 }
 
 const checkCaptcha = (a, b, result) => {
