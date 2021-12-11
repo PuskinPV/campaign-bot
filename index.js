@@ -138,7 +138,11 @@ bot.onText(/.*/, async(msg, match) => {
 		
 		a = Math.floor(Math.random() * 10);
 		b = Math.floor(Math.random() * 10);
-		bot.sendMessage(msg.chat.id, `${a} + ${b} = ?`)
+		bot.sendMessage(msg.chat.id, `${a} + ${b} = ?`,{
+			reply_markup: {
+				remove_keyboard:true
+			}
+		})
 		state = STATE.CAPTCHA
 		return
 	}
