@@ -1,6 +1,8 @@
 require('dotenv').config()
 const TelegramBot = require('node-telegram-bot-api');
 
+const { updateUser, findUser } = require('./controllers')
+
 // Import Environment Variable
 const {
 	BOT_URL,
@@ -45,7 +47,7 @@ const member = {
 const bot = new TelegramBot(BOT_TOKEN, {polling: true});
 
 // Fields
-const TELEGRAM_LIST = [TELEGRAM_GROUP, TELEGRAM_CHANNEL, PARTNER_TELEGRAM_GROUP, PARTNER_TELEGRAM_CHANNEL];
+const TELEGRAM_LIST = [`@${TELEGRAM_GROUP}`, `@${TELEGRAM_CHANNEL}`, `@${PARTNER_TELEGRAM_GROUP}`, `@${PARTNER_TELEGRAM_CHANNEL}`];
 
 const STATE = {
 	'START': 0,
@@ -62,7 +64,10 @@ var state = STATE.START;
 
 
 const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
+	// Need to fix
+	return true
 	var checkResultsPromises = checkTeleList.map(checkTeleId => {
+		console.log(checkTeleId)
 		return bot.getChatMember(checkTeleId, telegramId)
 	})
 
@@ -71,7 +76,6 @@ const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
 	const checkResults = members.reduce((res, member) => {
 		return res && ["creator", "administrator", "member"].includes(member.status)
 	}, true)
-	console.log(checkResults)
 	return checkResults
 }
 
@@ -81,11 +85,12 @@ const checkValidTwitter = async(username) => {
 	// username format: @username
 	const pureUsername = username.match(/[\w]+/)?.[0] || ''
 	try {
-		const res = await axios.get(`https://api.twitter.com/2/users/by/username/${username}`)
+		const res = await axios.get(`https://api.twitter.com/2/users/by/username/${pureUsername}`)
 		const userId = res.data.data?.id
 		return typeof userId !== 'undefined'
 	} catch (err) {
 		// Ignore
+		console.log(err.response.data)
 		return true
 	}
 }
@@ -122,21 +127,21 @@ bot.onText(/.*/, async(msg) => {
 		case STATE.CAPTCHA:
 			// Check Captcha
 			const isPassCaptcha = checkCaptcha(a, b, msg.text)
+			console.log(isPassCaptcha)
 			if (isPassCaptcha) {
 				bot.sendMessage(msg.chat.id, 
-					'Please complete the following tasks.\n' +
-					'Thereafter press Confirm ✅ button to proceed for the next step.',
+					'Please complete the following tasks.',
 					{
 						reply_markup: {
-							"resize_keyboard":true,
+							// "resize_keyboard":true,
 							"inline_keyboard":[
-								[{ text: 'Join MetaRacers Announcement Channel on Telegram ', url: `https://t.me/${TELEGRAM_CHANNEL}` }],
-								[{ text: 'Join MetaRacers Global community group on Telegram ', url: `https://t.me/${TELEGRAM_GROUP}` }],
-								[{ text: 'Follow MetaRacers on Twitter: ', url: `https://twitter.com/${TWITTER}` }],
-								[{ text: 'Join BSCStation’s Announcement Channel on Telegram:', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
-								[{ text: 'Join  BSCStation’s Global community group on Telegram:', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
-								[{ text: 'Follow BSCStation on Twitter: ', url: `https://twitter.com/${PARTNER_TWITTER}` }],
-								[{ text: 'Retweet the pinned tweet + Share + tag 3 friends in the comment section ', url: PINNED_TWEET_URL }],
+								[{ text: "Join MetaRacers' Telegram Announcement", url: `https://t.me/${TELEGRAM_CHANNEL}` }],
+								[{ text: "Join MetaRacers' Telegram Community", url: `https://t.me/${TELEGRAM_GROUP}` }],
+								[{ text: "Follow MetaRacers' Twitter", url: `https://twitter.com/${TWITTER}` }],
+								[{ text: 'Join BSCStation’s Telegram Announcement', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
+								[{ text: 'Join BSCStation’s Community', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
+								[{ text: "Follow BSCStation's Twitter", url: `https://twitter.com/${PARTNER_TWITTER}` }],
+								[{ text: 'Retweet + Share + Tag 3 friends ', url: PINNED_TWEET_URL }],
 								[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
 							]
 						}
@@ -174,7 +179,7 @@ bot.onText(/.*/, async(msg) => {
 		case STATE.TWITTER:
 			if (REGEX_FLOW.TWITTER.test(msg.text)) {
 				const isValidTwitter = await checkValidTwitter(msg.text)
-				console.log(isValidTwitter, msg.text)
+				// console.log(isValidTwitter, msg.text)
 				if (isValidTwitter) {
           bot.sendMessage(msg.chat.id, 'Send your Binance Smart Chain (BEP20) wallet address. (Do not send address from exchange)')
 					state += 1
@@ -205,8 +210,7 @@ bot.onText(/.*/, async(msg) => {
 });
 
 bot.on("callback_query",async (data)=>{				
-	//press confirm to check all
-	console.log(data);
+	// press confirm to check all
 	if(data?.data == 'CONFIRM'){
 		const isJoinedTelegrams = await checkJoinedTelegrams(data.message.chat.id,TELEGRAM_LIST);
 		if (isJoinedTelegrams) {

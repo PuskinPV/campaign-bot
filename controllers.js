@@ -1,3 +1,4 @@
+const { model } = require('mongoose')
 const { User } = require('./models')
 
 const updateUser = userFields => {
@@ -20,3 +21,6 @@ const findUser = filters => {
 	// Find an user by filters
 	return User.findOne(filters)
 }
+
+module.exports.updateUser = updateUser
+module.exports.findUser = findUser

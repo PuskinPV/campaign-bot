@@ -3,7 +3,7 @@ module.exports.REGEX_FLOW = {
 	'CAPTCHA': /^[a-zA-Z0-9]{4}$/,
 	'JOIN': /Join in/,
 	'CONFIRM': /CONFIRM/,
-	'TWITTER': /^@[\w]+$/,
+	'TWITTER': /^@[A-Za-z0-9_]{1,15}$/,
 	'WALET': /^(0x){1}[0-9a-fA-F]{40}$/,
 	'ACCOUNT': /Account/,
 	'USEFUL_LINKS': 'Useful Links'
