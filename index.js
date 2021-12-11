@@ -1,7 +1,7 @@
 require('dotenv').config()
 const TelegramBot = require('node-telegram-bot-api');
 
-const { updateUser, findUser } = require('./controllers')
+const { updateUser, findUser, countRefer } = require('./controllers')
 
 // Import Environment Variable
 const {
@@ -18,13 +18,19 @@ const {
 } = process.env
 
 // Import constants
-const { REGEX_FLOW } = require('./constants')
+const { 
+	REGEX_FLOW,
+	COMPLETE_REPLY_MARKUP
+} = require('./constants')
 
 // Import and Config axios
 const axios = require('axios')
 axios.defaults.headers.common = {
 	'Authorization': `bearer ${TWITTER_BEAR_TOKEN}`
 }
+
+// Import services
+const { countPoint } = require('./services')
 
 // Init Default Member
 const member = {
@@ -54,7 +60,8 @@ const STATE = {
 	'CAPTCHA': 1,
 	'JOIN_IN': 2,
 	'TWITTER': 3,
-	'WALLET': 4
+	'WALLET': 4,
+	'COMPLETE': 5
 }
 
 var state = STATE.START;
@@ -62,21 +69,22 @@ var state = STATE.START;
 //handle callback query data
 
 
-
 const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
-	// Need to fix
-	return true
-	var checkResultsPromises = checkTeleList.map(checkTeleId => {
-		console.log(checkTeleId)
-		return bot.getChatMember(checkTeleId, telegramId)
-	})
+	try {
+		var checkResultsPromises = checkTeleList.map(checkTeleId => {
+			console.log(checkTeleId)
+			return bot.getChatMember(checkTeleId, telegramId)
+		})
 
-	const members = await Promise.all(checkResultsPromises)
-	
-	const checkResults = members.reduce((res, member) => {
-		return res && ["creator", "administrator", "member"].includes(member.status)
-	}, true)
-	return checkResults
+		const members = await Promise.all(checkResultsPromises)
+		
+		const checkResults = members.reduce((res, member) => {
+			return res && ["creator", "administrator", "member"].includes(member.status)
+		}, true)
+		return checkResults
+	} catch (err) {
+		console.log(err)
+	}
 }
 
 
@@ -116,8 +124,18 @@ let a = Math.floor(Math.random() * 10);
 let b = Math.floor(Math.random() * 10);
 
 
-bot.onText(/.*/, async(msg) => {
+bot.onText(/.*/, async(msg, match) => {
 	if (REGEX_FLOW.START.test(msg.text)) {
+		const existsUser = await findUser({ telegramId: msg.chat.id })
+		const refelId = match[0].split(' ')[1]
+		if (refelId && !existsUser) {
+			updateUser({
+				telegramId: msg.chat.id,
+				referBy: refelId
+			})
+			console.log(msg.chat.username)
+		}
+		
 		a = Math.floor(Math.random() * 10);
 		b = Math.floor(Math.random() * 10);
 		bot.sendMessage(msg.chat.id, `${a} + ${b} = ?`)
@@ -132,29 +150,51 @@ bot.onText(/.*/, async(msg) => {
 			// Check Captcha
 			const isPassCaptcha = checkCaptcha(a, b, msg.text)
 			if (isPassCaptcha) {
-				bot.sendMessage(msg.chat.id, 
-					'Please complete the following tasks.',
-					{
-						reply_markup: {
-							// "resize_keyboard":true,
-							"inline_keyboard":[
-								[{ text: "Join MetaRacers' Telegram Announcement", url: `https://t.me/${TELEGRAM_CHANNEL}` }],
-								[{ text: "Join MetaRacers' Telegram Community", url: `https://t.me/${TELEGRAM_GROUP}` }],
-								[{ text: "Follow MetaRacers' Twitter", url: `https://twitter.com/${TWITTER}` }],
-								[{ text: 'Join BSCStation’s Telegram Announcement', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
-								[{ text: 'Join BSCStation’s Community', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
-								[{ text: "Follow BSCStation's Twitter", url: `https://twitter.com/${PARTNER_TWITTER}` }],
-								[{ text: 'Retweet + Share + Tag 3 friends ', url: PINNED_TWEET_URL }],
-								[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
-							]
-						}
-					}	
-				);
-				// bot.on("callback_query", (data)=>{				
-				// 	if(data?.data == 'CONFIRM'){
-				// 		console.log(state)
-				// 	}
-				// })
+				// bot.sendMessage(msg.chat.id, 
+				// 	'Please complete the following tasks.',
+				// 	{
+				// 		reply_markup: {
+				// 			"resize_keyboard": true,
+				// 			"inline_keyboard":[
+				// 				[{ text: "Join MetaRacers' Telegram Announcement", url: `https://t.me/${TELEGRAM_CHANNEL}` }],
+				// 				[{ text: "Join MetaRacers' Community", url: `https://t.me/${TELEGRAM_GROUP}` }],
+				// 				[{ text: "Follow MetaRacers' Twitter", url: `https://twitter.com/${TWITTER}` }],
+				// 				[{ text: 'Join BSCStation’s Telegram Announcement', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
+				// 				[{ text: 'Join BSCStation’s Community', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
+				// 				[{ text: "Follow BSCStation's Twitter", url: `https://twitter.com/${PARTNER_TWITTER}` }],
+				// 				[{ text: 'Retweet + Share + Tag 3 friends ', url: PINNED_TWEET_URL }],
+				// 				[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
+				// 			]
+				// 		}
+				// 	}	
+				// );
+				await bot.sendMessage(msg.chat.id, 
+					"Metaracers' Tasks:\n" +
+					`🔹️ <a href='https://t.me/${TELEGRAM_CHANNEL}'>Metaracers' Telegram Channel</a>\n` +
+					`🔹️ <a href='https://t.me/${TELEGRAM_GROUP}'>Metaracers' Community</a>\n` +
+					`🔹️ <a href='https://twitter.com/${TWITTER}'>Metaracers' Twitter</a>` +
+					"\nPress Confirm after completing all tasks!"
+					,{
+						parse_mode: "HTML",
+						disable_web_page_preview: true
+					})
+				await bot.sendMessage(msg.chat.id, 
+					"BSCStation's Tasks:\n" +
+					`🔹️ <a href='https://t.me/${PARTNER_TELEGRAM_CHANNEL}'>BSCStation's Telegram Channel</a>\n` +
+					`🔹️ <a href='https://t.me/${PARTNER_TELEGRAM_GROUP}'>BSCStation's Community</a>\n` +
+					`🔹️ <a href='https://twitter.com/${PARTNER_TWITTER}'>BSCStation's Twitter</a>\n` +
+					`🔹️ <a href='${PINNED_TWEET_URL}'>Retweet + Share + Tag 3 friends</a>` +
+					"\nPress Confirm after completing all tasks!"
+				,{
+					parse_mode:"HTML",
+					disable_web_page_preview: true,
+					reply_markup:{
+						inline_keyboard:[
+							[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
+						],
+					}
+				});
+
 				state = STATE.JOIN_IN;
 
 			} else {
@@ -210,23 +250,64 @@ bot.onText(/.*/, async(msg) => {
 			if (REGEX_FLOW.WALET.test(msg.text)) {
 				const isValidWallet = checkWalletAddress(msg.text)
 				if (isValidWallet) {
+					// Save [wallet] to database
+					updateUser({
+						telegramId: msg.chat.id,
+						addressWallet: msg.text
+					})
 					//TODO: button ACCOUNT and USEFULL LINK
 					bot.sendMessage(msg.chat.id, 
-						'Congratulations! 🎉\n' +
-						'You have successfully registered for MRS Airdrop.\n\n' +
-						'Your Referral Link 👇\n' +
-						`${BOT_URL}?start=${msg.chat.id}`
+						'🎉 <b>Congratulations</b>! 🎉\n' +
+						'You have completed the <b>Metaracers x BSCStation Campaign</b>.\n' +
+						'Tasks completion will be checked again before result. ' +
+						'Fake/bots will be rejected.\n\n' +
+						'👇 Your Referral Link 👇\n' +
+						`${BOT_URL}?start=${msg.chat.id}`,
+						{
+							parse_mode: "HTML",
+							reply_markup: COMPLETE_REPLY_MARKUP
+						}
 					)
+					state = STATE.COMPLETE
 					break
 				}
 			}
 			bot.sendMessage(msg.chat.id, '❌ Invalid BEP20 wallet address, please send correct BEP20 wallet address.')
 			break
+
+		default:
+			if (REGEX_FLOW.ACCOUNT.test(msg.text)) {
+				const referralCount = await countRefer(msg.chat.id)
+				const user = await findUser({ telegramId: msg.chat.id })
+				
+				bot.sendMessage(msg.chat.id, 
+					`🆔 <b>Telegram ID:</b> ${user.telegramId}\n` +
+					`🏦 <b>Wallet Address:</b> <pre>${user.addressWallet}</pre>\n` +
+					`💬 <b>Twitter: </b> <a href='https://twitter.com/${user.twitterUsername}'>@${user.twitterUsername}</a>\n` +
+					`💰 <b>Point:</b> ${countPoint(user)}\n\n` +
+					`👥 <b>People invited:</b> ${referralCount}\n` +
+					`🔗 <b>Referral Link:</b> ${BOT_URL}?start=${msg.chat.id}`,
+					{
+						parse_mode: "HTML",
+						disable_web_page_preview: true
+					}
+				)
+			} else if (REGEX_FLOW.USEFUL_LINKS.test(msg.text)) {
+				bot.sendMessage(msg.chat.id, 
+					`<b>Website: </b>https://www.meta-racers.com\n` +
+					`<b>Twitter: </b>https://twitter.com/MetaRacersBsc\n` +
+					`<b>Telegram Channel : </b>https://t.me/MetaRacersbsc_official\n` +
+					`<b>Telegram Group: </b>https://t.me/MetaRacersBsc_Global\n`
+				,
+				{
+					parse_mode: "HTML"
+				})
+			}
 	}
 });
 
-bot.on("callback_query",async (data)=>{				
-	// press confirm to check all
+bot.on("callback_query", async(data)=>{
+	// Press confirm to check all
 	if(data?.data == 'CONFIRM'){
 		const isJoinedTelegrams = await checkJoinedTelegrams(data.message.chat.id,TELEGRAM_LIST);
 		if (isJoinedTelegrams) {
@@ -234,18 +315,22 @@ bot.on("callback_query",async (data)=>{
 			updateUser({
 				telegramId: data.message.chat.id,
 				username: data.message.chat.username,
-				isJoinedTelegrams: true
+				isJoinedTelegrams: true,
+				// Will be checked again before result
+				isFollowTwitter: true,
+				isFollowTwitterParter: true,
+				isLikeTweet: true,
+				isRetweet: true
 			})
 
 			// Next step
 			bot.sendMessage(data.message.chat.id, 'Please send your twitter username begins with the “@”')
 			state = STATE.TWITTER
-			} else {
+		} else {
 			await bot.answerCallbackQuery(data.id, "You have unfinished tasks. Please complete tasks and press Confirm.", show_alert=true)	
 			// bot.sendMessage(data.message.chat.id, 'You have unfinished tasks. Please complete tasks and press Confirm.')
-			}
-		} else {
-			bot.sendMessage(data.message.chat.id, 'Please Click Confirm Button')
 		}
+	} else {
+		bot.sendMessage(data.message.chat.id, 'Please Click Confirm Button')
 	}
-);
+});

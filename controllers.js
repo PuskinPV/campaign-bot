@@ -22,5 +22,19 @@ const findUser = filters => {
 	return User.findOne(filters)
 }
 
+const countRefer = async(telegramId) => {
+	const referralUsers = await User.find({ referBy: telegramId })
+	let joinedUsers = referralUsers.filter(user => {
+		return user.isJoinedTelegrams
+						&& user.isFollowTwitter
+						&& user.isFollowTwitterParter
+						&& user.isLikeTweet
+						&& user.isRetweet
+						// && user.isRegard
+	})
+	return joinedUsers?.length
+}
+
 module.exports.updateUser = updateUser
 module.exports.findUser = findUser
+module.exports.countRefer = countRefer
