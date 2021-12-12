@@ -11,7 +11,7 @@ const updateUser = userFields => {
 		{ upsert: true },
 		(err, doc) => {
 			if (err) {
-				console.log('Error in inserting', userFields, err)
+				console.error('Error in inserting', userFields, err)
 			}
 		}
 	)

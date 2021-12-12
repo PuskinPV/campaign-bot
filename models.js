@@ -4,9 +4,9 @@ const mongoose = require('mongoose')
 mongoose.connect('mongodb://localhost:27017/mrs_campaign_bot',
 	err => {
 		if (!err) {
-			console.log('Connection succeeded')
+			console.error('Connection succeeded')
 		} else {
-			console.log('Error in connection', err)
+			console.error('Error in connection', err)
 		}
 	}
 )

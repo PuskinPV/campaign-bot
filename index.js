@@ -72,7 +72,7 @@ var state = STATE.START;
 const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
 	try {
 		var checkResultsPromises = checkTeleList.map(checkTeleId => {
-			console.log(checkTeleId)
+			// console.log(checkTeleId)
 			return bot.getChatMember(checkTeleId, telegramId)
 		})
 
@@ -83,7 +83,7 @@ const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
 		}, true)
 		return checkResults
 	} catch (err) {
-		console.log(err)
+		console.error(err)
 	}
 }
 
@@ -100,7 +100,7 @@ const checkValidTwitter = async(username) => {
 		}
 	} catch (err) {
 		// Ignore
-		console.log(err.response.data)
+		console.error(err.response.data)
 		return {
 			isValid: true
 		}
@@ -117,7 +117,7 @@ const checkWalletAddress = (address) => {
 }
 
 const checkCaptcha = (a, b, result) => {
-	console.log(a + b, result, a + b == result)
+	// console.log(a + b, result, a + b == result)
 	return a + b == result;
 }
 let a = Math.floor(Math.random() * 10);
@@ -133,7 +133,7 @@ bot.onText(/.*/, async(msg, match) => {
 				telegramId: msg.chat.id,
 				referBy: refelId
 			})
-			console.log(msg.chat.username)
+			// console.log(msg.chat.username)
 		}
 		
 		a = Math.floor(Math.random() * 10);
