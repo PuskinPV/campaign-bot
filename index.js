@@ -267,9 +267,9 @@ bot.onText(/.*/, async(msg, match) => {
 				const user = await findUser({ telegramId: msg.chat.id })
 				
 				bot.sendMessage(msg.chat.id, 
-					`🆔 <b>Telegram ID:</b> ${user.telegramId}\n` +
-					`🏦 <b>Wallet Address:</b> <pre>${user.addressWallet}</pre>\n` +
-					`💬 <b>Twitter: </b> <a href='https://twitter.com/${user.twitterUsername}'>@${user.twitterUsername}</a>\n` +
+					`🆔 <b>Telegram ID:</b> ${user?.telegramId}\n` +
+					`🏦 <b>Wallet Address:</b> <pre>${user?.addressWallet}</pre>\n` +
+					`💬 <b>Twitter: </b> <a href='https://twitter.com/${user?.twitterUsername}'>@${user.twitterUsername}</a>\n` +
 					`💰 <b>Point:</b> ${countPoint(user)}\n\n` +
 					`👥 <b>People invited:</b> ${referralCount}\n` +
 					`🔗 <b>Referral Link:</b> ${BOT_URL}?start=${msg.chat.id}`,
