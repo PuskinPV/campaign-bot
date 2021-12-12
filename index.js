@@ -336,7 +336,7 @@ bot.on("callback_query", async(data)=>{
 
 bot.onText(/\/check/, async(msg, match) => {
 	if(msg.chat.username === DEV || msg.chat.username === ADMIN){
-		const allUsers = await findUser();
+		const allUsers = await getAllUsers();
 		const fields = ['telegramId','username','twitterUsername',
 										'addressWallet','referBy','isJoinedTelegrams',
 										'isFollowTwitter','isFollowTwitterParter','isLikeTweet','isRetweet'];
