@@ -13,11 +13,12 @@ mongoose.connect('mongodb://localhost:27017/mrs_campaign_bot',
 
 var userSchema = new mongoose.Schema({
 	telegramId: { type: String, required: true, unique: true },
-	username: { type: String },
-	twitterId: { type: String },
-	twitterUsername: { type: String },
-	addressWallet: { type: String },
-	referBy: { type: String, default: null },	
+	username: { type: String, default: '' },
+	twitterId: { type: String, default: '' },
+	twitterUsername: { type: String, default: '' },
+	addressWallet: { type: String, default: '' },
+	referBy: { type: String, default: null },
+	state: { type: Number, default: 0},
 
 	isRegard: { type: Boolean, default: false },
 	isJoinedTelegrams: { type: Boolean, default: false },

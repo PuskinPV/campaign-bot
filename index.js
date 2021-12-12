@@ -1,7 +1,15 @@
 require('dotenv').config()
+const fs = require('fs')
 const TelegramBot = require('node-telegram-bot-api');
-
-const { updateUser, findUser, countRefer } = require('./controllers')
+const { parse } = require('json2csv');
+const { 
+	updateUser,
+	findUser,
+	countRefer,
+	getAllUsers,
+	getUserState,
+	setUserState
+} = require('./controllers')
 
 // Import Environment Variable
 const {
@@ -15,6 +23,8 @@ const {
 	PARTNER_TELEGRAM_CHANNEL,
 	PARTNER_TELEGRAM_GROUP,
 	PINNED_TWEET_URL,
+	DEV,
+	ADMIN,
 } = process.env
 
 // Import constants
@@ -63,11 +73,6 @@ const STATE = {
 	'WALLET': 4,
 	'COMPLETE': 5
 }
-
-var state = STATE.START;
-
-//handle callback query data
-
 
 const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
 	try {
@@ -125,6 +130,8 @@ let b = Math.floor(Math.random() * 10);
 
 
 bot.onText(/.*/, async(msg, match) => {
+	// let state = await getUserState(msg.chat.id)
+	// console.log("state ",state)
 	if (REGEX_FLOW.START.test(msg.text)) {
 		const existsUser = await findUser({ telegramId: msg.chat.id })
 		const refelId = match[0].split(' ')[1]
@@ -143,12 +150,11 @@ bot.onText(/.*/, async(msg, match) => {
 				remove_keyboard:true
 			}
 		})
-		state = STATE.CAPTCHA
+		setUserState(msg.chat.id, STATE.CAPTCHA)
 		return
 	}
-	console.log("state", state);
 	try {
-		switch(state) {
+		switch(await getUserState(msg.chat.id)) {
 			// Handle Captcha (state 1)
 			case STATE.CAPTCHA:
 				// Check Captcha
@@ -181,7 +187,7 @@ bot.onText(/.*/, async(msg, match) => {
 						}
 					});
 
-					state = STATE.JOIN_IN;
+					setUserState(msg.chat.id, STATE.JOIN_IN);
 
 				} else {
 					bot.sendMessage(msg.chat.id, '❌ Wrong verification code. Please enter correct verification code.')
@@ -222,7 +228,7 @@ bot.onText(/.*/, async(msg, match) => {
 
 							// Next step
 							bot.sendMessage(msg.chat.id, 'Send your Binance Smart Chain (BEP20) wallet address. (Do not send address from exchange)')
-							state = STATE.WALLET
+							setUserState(msg.chat.id, STATE.WALLET)
 						}
 						break
 					}
@@ -253,7 +259,7 @@ bot.onText(/.*/, async(msg, match) => {
 								reply_markup: COMPLETE_REPLY_MARKUP
 							}
 						)
-						state = STATE.COMPLETE
+						setUserState(msg.chat.id, STATE.COMPLETE)
 						break
 					}
 				}
@@ -315,7 +321,7 @@ bot.on("callback_query", async(data)=>{
 
 				// Next step
 				bot.sendMessage(data.message.chat.id, 'Please send your twitter username begins with the “@”')
-				state = STATE.TWITTER
+				setUserState(data.message.chat.id, STATE.TWITTER)
 			} else {
 				await bot.answerCallbackQuery(data.id, "You have unfinished tasks. Please complete tasks and press Confirm.", show_alert=true)	
 				// bot.sendMessage(data.message.chat.id, 'You have unfinished tasks. Please complete tasks and press Confirm.')
@@ -325,5 +331,33 @@ bot.on("callback_query", async(data)=>{
 		}
 	} catch(error){
 			console.error("error handle callback_data: \n"+ "in date: \n"+ new Date()+"by: "+data?.message?.chat.id+ "\n" + error?.name + error.message+"\n\n")
+	}
+});
+
+bot.onText(/\/check/, async(msg, match) => {
+	if(msg.chat.username === DEV || msg.chat.username === ADMIN){
+		const allUsers = await findUser();
+		const fields = ['telegramId','username','twitterUsername',
+										'addressWallet','referBy','isJoinedTelegrams',
+										'isFollowTwitter','isFollowTwitterParter','isLikeTweet','isRetweet'];
+		const opt = {fields}
+		const csv = parse(allUsers, opt);
+		
+		const fileName = `exportDB-${Math.round(+new Date()/1000)}.csv`;
+		fs.writeFile(`./data/${fileName}`, csv, (err) => {
+			if (err) { console.error(err) }
+			
+			bot.sendDocument(msg.chat.id,
+				// fs.readFileSync('exportDb.xlsx'),
+				`./data/${fileName}`,
+				{
+					caption: 'Export File'
+				},
+				{
+					filename: fileName,
+					contentType: 'text/csv'
+				}
+			);
+		})	
 	}
 });

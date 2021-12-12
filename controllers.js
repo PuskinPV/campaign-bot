@@ -25,16 +25,31 @@ const findUser = filters => {
 const countRefer = async(telegramId) => {
 	const referralUsers = await User.find({ referBy: telegramId })
 	let joinedUsers = referralUsers.filter(user => {
-		return user.isJoinedTelegrams
-						&& user.isFollowTwitter
-						&& user.isFollowTwitterParter
-						&& user.isLikeTweet
-						&& user.isRetweet
-						// && user.isRegard
+		return user.isJoinedTelegrams && user.twitterUsername !== ''
 	})
 	return joinedUsers?.length
+}
+
+const getUserState = async(telegramId) => {
+	const user = await User.findOne({telegramId: telegramId})
+	return user?.state || 0
+}
+
+const setUserState = (telegramId, newState) => {
+	updateUser({
+		telegramId: telegramId,
+		state: newState
+	})
+}
+
+const getAllUsers = async() => {
+	const users = await User.find({})
+	return users
 }
 
 module.exports.updateUser = updateUser
 module.exports.findUser = findUser
 module.exports.countRefer = countRefer
+module.exports.getAllUsers = getAllUsers
+module.exports.getUserState = getUserState
+module.exports.setUserState = setUserState
