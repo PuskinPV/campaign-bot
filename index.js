@@ -265,19 +265,20 @@ bot.onText(/.*/, async(msg, match) => {
 			if (REGEX_FLOW.ACCOUNT.test(msg.text)) {
 				const referralCount = await countRefer(msg.chat.id)
 				const user = await findUser({ telegramId: msg.chat.id })
-				
-				bot.sendMessage(msg.chat.id, 
-					`🆔 <b>Telegram ID:</b> ${user?.telegramId}\n` +
-					`🏦 <b>Wallet Address:</b> <pre>${user?.addressWallet}</pre>\n` +
-					`💬 <b>Twitter: </b> <a href='https://twitter.com/${user?.twitterUsername}'>@${user.twitterUsername}</a>\n` +
-					`💰 <b>Point:</b> ${countPoint(user)}\n\n` +
-					`👥 <b>People invited:</b> ${referralCount}\n` +
-					`🔗 <b>Referral Link:</b> ${BOT_URL}?start=${msg.chat.id}`,
-					{
-						parse_mode: "HTML",
-						disable_web_page_preview: true
-					}
-				)
+				if (user) {
+					bot.sendMessage(msg.chat.id, 
+						`🆔 <b>Telegram ID:</b> ${user?.telegramId}\n` +
+						`🏦 <b>Wallet Address:</b> <pre>${user?.addressWallet}</pre>\n` +
+						`💬 <b>Twitter: </b> <a href='https://twitter.com/${user?.twitterUsername}'>@${user?.twitterUsername}</a>\n` +
+						`💰 <b>Point:</b> ${countPoint(user)}\n\n` +
+						`👥 <b>People invited:</b> ${referralCount}\n` +
+						`🔗 <b>Referral Link:</b> ${BOT_URL}?start=${msg.chat.id}`,
+						{
+							parse_mode: "HTML",
+							disable_web_page_preview: true
+						}
+					)
+				}
 			} else if (REGEX_FLOW.USEFUL_LINKS.test(msg.text)) {
 				bot.sendMessage(msg.chat.id, 
 					`<b>Website: </b>https://www.meta-racers.com\n` +
