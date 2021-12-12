@@ -150,24 +150,6 @@ bot.onText(/.*/, async(msg, match) => {
 			// Check Captcha
 			const isPassCaptcha = checkCaptcha(a, b, msg.text)
 			if (isPassCaptcha) {
-				// bot.sendMessage(msg.chat.id, 
-				// 	'Please complete the following tasks.',
-				// 	{
-				// 		reply_markup: {
-				// 			"resize_keyboard": true,
-				// 			"inline_keyboard":[
-				// 				[{ text: "Join MetaRacers' Telegram Announcement", url: `https://t.me/${TELEGRAM_CHANNEL}` }],
-				// 				[{ text: "Join MetaRacers' Community", url: `https://t.me/${TELEGRAM_GROUP}` }],
-				// 				[{ text: "Follow MetaRacers' Twitter", url: `https://twitter.com/${TWITTER}` }],
-				// 				[{ text: 'Join BSCStation’s Telegram Announcement', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
-				// 				[{ text: 'Join BSCStation’s Community', url: `https://t.me/${PARTNER_TELEGRAM_CHANNEL}`}],
-				// 				[{ text: "Follow BSCStation's Twitter", url: `https://twitter.com/${PARTNER_TWITTER}` }],
-				// 				[{ text: 'Retweet + Share + Tag 3 friends ', url: PINNED_TWEET_URL }],
-				// 				[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
-				// 			]
-				// 		}
-				// 	}	
-				// );
 				await bot.sendMessage(msg.chat.id, 
 					"Metaracers' Tasks:\n" +
 					`🔹️ <a href='https://t.me/${TELEGRAM_CHANNEL}'>Metaracers' Telegram Channel</a>\n` +
