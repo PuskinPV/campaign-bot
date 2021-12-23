@@ -344,6 +344,9 @@ bot.onText(/\/check/, async(msg, match) => {
 		const csv = parse(allUsers, opt);
 		
 		const fileName = `exportDB-${Math.round(+new Date()/1000)}.csv`;
+		if (!fs.existsSync('data')) {
+			fs.mkdirSync('data')
+		}
 		fs.writeFile(`./data/${fileName}`, csv, (err) => {
 			if (err) { console.error(err) }
 			
