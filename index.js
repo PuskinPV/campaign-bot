@@ -121,13 +121,11 @@ const checkWalletAddress = (address) => {
 	return isValid;
 }
 
-const checkCaptcha = (a, b, result) => {
-	// console.log(a + b, result, a + b == result)
-	return a + b == result;
+const checkCaptcha = (telegramId, result) => {
+	return result == pendingCaptchas[telegramId]
 }
-let a = Math.floor(Math.random() * 10);
-let b = Math.floor(Math.random() * 10);
 
+const pendingCaptchas = {}
 
 bot.onText(/.*/, async(msg, match) => {
 	// let state = await getUserState(msg.chat.id)
@@ -143,8 +141,9 @@ bot.onText(/.*/, async(msg, match) => {
 			// console.log(msg.chat.username)
 		}
 		
-		a = Math.floor(Math.random() * 10);
-		b = Math.floor(Math.random() * 10);
+		const a = Math.floor(Math.random() * 10);
+		const b = Math.floor(Math.random() * 10);
+		pendingCaptchas[msg.chat.id] = a + b
 		bot.sendMessage(msg.chat.id, `${a} + ${b} = ?`,{
 			reply_markup: {
 				remove_keyboard:true
@@ -158,7 +157,7 @@ bot.onText(/.*/, async(msg, match) => {
 			// Handle Captcha (state 1)
 			case STATE.CAPTCHA:
 				// Check Captcha
-				const isPassCaptcha = checkCaptcha(a, b, msg.text)
+				const isPassCaptcha = checkCaptcha(msg.chat.id, msg.text)
 				if (isPassCaptcha) {
 					await bot.sendMessage(msg.chat.id, 
 						"Metaracers' Tasks:\n" +
