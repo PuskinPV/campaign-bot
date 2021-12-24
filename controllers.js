@@ -47,9 +47,11 @@ const getAllUsers = async() => {
 	return users
 }
 
-module.exports.updateUser = updateUser
-module.exports.findUser = findUser
-module.exports.countRefer = countRefer
-module.exports.getAllUsers = getAllUsers
-module.exports.getUserState = getUserState
-module.exports.setUserState = setUserState
+module.exports = {
+	updateUser,
+	findUser,
+	countRefer,
+	getAllUsers,
+	getUserState,
+	setUserState
+}

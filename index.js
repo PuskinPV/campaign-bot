@@ -27,17 +27,13 @@ const {
 	ADMIN,
 } = process.env
 
+
+
 // Import constants
 const { 
 	REGEX_FLOW,
 	COMPLETE_REPLY_MARKUP
 } = require('./constants')
-
-// Import and Config axios
-const axios = require('axios')
-axios.defaults.headers.common = {
-	'Authorization': `bearer ${TWITTER_BEAR_TOKEN}`
-}
 
 // Import services
 const { countPoint } = require('./services')
@@ -63,7 +59,7 @@ const member = {
 const bot = new TelegramBot(BOT_TOKEN, {polling: true});
 
 // Fields
-const TELEGRAM_LIST = [`@${TELEGRAM_GROUP}`, `@${TELEGRAM_CHANNEL}`, `@${PARTNER_TELEGRAM_GROUP}`, `@${PARTNER_TELEGRAM_CHANNEL}`];
+const TELEGRAM_LIST = [`@${TELEGRAM_GROUP}`, `@${TELEGRAM_CHANNEL}`];
 
 const STATE = {
 	'START': 0,
@@ -74,56 +70,14 @@ const STATE = {
 	'COMPLETE': 5
 }
 
-const checkJoinedTelegrams = async(telegramId, checkTeleList) => {
-	try {
-		var checkResultsPromises = checkTeleList.map(checkTeleId => {
-			// console.log(checkTeleId)
-			return bot.getChatMember(checkTeleId, telegramId)
-		})
+// import telegram module
+const {
+	checkJoinedTelegrams,
+	checkValidTwitter,
+	checkWalletAddress,
+	checkCaptcha
+} = require('./checking')
 
-		const members = await Promise.all(checkResultsPromises)
-		
-		const checkResults = members.reduce((res, member) => {
-			return res && ["creator", "administrator", "member"].includes(member.status)
-		}, true)
-		return checkResults
-	} catch (err) {
-		console.error(err)
-	}
-}
-
-
-// Check Valid Twitter
-const checkValidTwitter = async(username) => {
-	// Return object with keys {isValid, twitterId}
-	try {
-		const res = await axios.get(`https://api.twitter.com/2/users/by/username/${username}`)
-		const twitterId = res.data.data?.id
-		return {
-			isValid: typeof twitterId !== 'undefined',
-			twitterId: twitterId
-		}
-	} catch (err) {
-		// Ignore
-		console.error(err.response.data)
-		return {
-			isValid: true
-		}
-	}
-}
-
-// Check Valid Wallet Address
-const Web3 = require('web3')
-const rpcURL = 'https://mainnet.infura.io/v3/2c6976208ef0479dbc1a402db2ceb870'
-const web3 = new Web3(new Web3.providers.HttpProvider(rpcURL));
-const checkWalletAddress = (address) => {
-	var isValid = web3.utils.isAddress(address);
-	return isValid;
-}
-
-const checkCaptcha = (telegramId, result) => {
-	return result == pendingCaptchas[telegramId]
-}
 
 const pendingCaptchas = {}
 
@@ -157,34 +111,40 @@ bot.onText(/.*/, async(msg, match) => {
 			// Handle Captcha (state 1)
 			case STATE.CAPTCHA:
 				// Check Captcha
-				const isPassCaptcha = checkCaptcha(msg.chat.id, msg.text)
+				const isPassCaptcha = checkCaptcha(pendingCaptchas, msg.chat.id, msg.text)
 				if (isPassCaptcha) {
 					await bot.sendMessage(msg.chat.id, 
 						"Metaracers' Tasks:\n" +
 						`🔹️ <a href='https://t.me/${TELEGRAM_CHANNEL}'>Metaracers' Telegram Channel</a>\n` +
 						`🔹️ <a href='https://t.me/${TELEGRAM_GROUP}'>Metaracers' Community</a>\n` +
-						`🔹️ <a href='https://twitter.com/${TWITTER}'>Metaracers' Twitter</a>` +
+						`🔹️ <a href='https://twitter.com/${TWITTER}'>Metaracers' Twitter</a>\n` +
+						`🔹️ <a href='${PINNED_TWEET_URL}'>Retweet + Share + Tag 3 friends</a>` +
 						"\nPress Confirm after completing all tasks!"
 						,{
 							parse_mode: "HTML",
-							disable_web_page_preview: true
+							disable_web_page_preview: true,
+							reply_markup:{
+								inline_keyboard:[
+									[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
+								],
+							}
 						})
-					await bot.sendMessage(msg.chat.id, 
-						"BSCStation's Tasks:\n" +
-						`🔹️ <a href='https://t.me/${PARTNER_TELEGRAM_CHANNEL}'>BSCStation's Telegram Channel</a>\n` +
-						`🔹️ <a href='https://t.me/${PARTNER_TELEGRAM_GROUP}'>BSCStation's Community</a>\n` +
-						`🔹️ <a href='https://twitter.com/${PARTNER_TWITTER}'>BSCStation's Twitter</a>\n` +
-						`🔹️ <a href='${PINNED_TWEET_URL}'>Retweet + Share + Tag 3 friends</a>` +
-						"\nPress Confirm after completing all tasks!"
-					,{
-						parse_mode:"HTML",
-						disable_web_page_preview: true,
-						reply_markup:{
-							inline_keyboard:[
-								[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
-							],
-						}
-					});
+					// await bot.sendMessage(msg.chat.id, 
+					// 	"BSCStation's Tasks:\n" +
+					// 	`🔹️ <a href='https://t.me/${PARTNER_TELEGRAM_CHANNEL}'>BSCStation's Telegram Channel</a>\n` +
+					// 	`🔹️ <a href='https://t.me/${PARTNER_TELEGRAM_GROUP}'>BSCStation's Community</a>\n` +
+					// 	`🔹️ <a href='https://twitter.com/${PARTNER_TWITTER}'>BSCStation's Twitter</a>\n` +
+					// 	`🔹️ <a href='${PINNED_TWEET_URL}'>Retweet + Share + Tag 3 friends</a>` +
+					// 	"\nPress Confirm after completing all tasks!"
+					// ,{
+					// 	parse_mode:"HTML",
+					// 	disable_web_page_preview: true,
+					// 	reply_markup:{
+					// 		inline_keyboard:[
+					// 			[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
+					// 		],
+					// 	}
+					// });
 
 					setUserState(msg.chat.id, STATE.JOIN_IN);
 
@@ -196,7 +156,7 @@ bot.onText(/.*/, async(msg, match) => {
 			case STATE.JOIN_IN: 
 				if (REGEX_FLOW.CONFIRM.test(msg.text)) {
 					// check join all telegram
-					const isJoinedTelegrams = await checkJoinedTelegrams(msg.chat.id, TELEGRAM_LIST);
+					const isJoinedTelegrams = await checkJoinedTelegrams(bot, msg.chat.id, TELEGRAM_LIST);
 					if (isJoinedTelegrams) {
 						bot.sendMessage(msg.chat.id, 'Please send your twitter username begins with the “@”')
 					} else {
@@ -274,7 +234,7 @@ bot.onText(/.*/, async(msg, match) => {
 							`🆔 <b>Telegram ID:</b> ${user?.telegramId}\n` +
 							`🏦 <b>Wallet Address:</b> <pre>${user?.addressWallet}</pre>\n` +
 							`💬 <b>Twitter: </b> <a href='https://twitter.com/${user?.twitterUsername}'>@${user?.twitterUsername}</a>\n` +
-							`💰 <b>Point:</b> ${countPoint(user)}\n\n` +
+							// `💰 <b>Point:</b> ${countPoint(user)}\n\n` +
 							`👥 <b>People invited:</b> ${referralCount}\n` +
 							`🔗 <b>Referral Link:</b> ${BOT_URL}?start=${msg.chat.id}`,
 							{
@@ -304,7 +264,7 @@ bot.on("callback_query", async(data)=>{
 	// Press confirm to check all
 	try{
 		if(data?.data == 'CONFIRM'){
-			const isJoinedTelegrams = await checkJoinedTelegrams(data?.message?.chat.id,TELEGRAM_LIST);
+			const isJoinedTelegrams = await checkJoinedTelegrams(bot, data?.message?.chat.id,TELEGRAM_LIST);
 			if (isJoinedTelegrams) {
 				// Save username & isJoinedTelegrams to database
 				updateUser({

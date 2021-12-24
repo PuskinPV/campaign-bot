@@ -8,4 +8,6 @@ const countPoint = (user) => {
 	return point
 }
 
-module.exports.countPoint = countPoint
+module.exports = {
+	countPoint
+}
