@@ -122,17 +122,12 @@ const checkWalletAddress = (address) => {
 	return isValid;
 }
 
-const checkCaptcha = (a, b, result) => {
-	// console.log(a + b, result, a + b == result)
-	return a + b == result;
+const checkCaptcha = (telegramId, result) => {
+	console.log(pendingCaptchas)
+	return pendingCaptchas[telegramId] == result;
 }
-let a = Math.floor(Math.random() * 10);
-let b = Math.floor(Math.random() * 10);
 
-// let verification = {
-// 	'15265': 10,
-// 	'15688': 17
-// }
+const pendingCaptchas = {}
 
 bot.onText(/.*/, async(msg, match) => {
 	// let state = await getUserState(msg.chat.id)
@@ -150,6 +145,7 @@ bot.onText(/.*/, async(msg, match) => {
 		
 		a = Math.floor(Math.random() * 10);
 		b = Math.floor(Math.random() * 10);
+		pendingCaptchas[msg.chat.id] = a + b
 		bot.sendMessage(msg.chat.id, `${a} + ${b} = ?`,{
 			reply_markup: {
 				remove_keyboard:true
@@ -163,13 +159,14 @@ bot.onText(/.*/, async(msg, match) => {
 			// Handle Captcha (state 1)
 			case STATE.CAPTCHA:
 				// Check Captcha
-				const isPassCaptcha = checkCaptcha(a, b, msg.text)
+				const isPassCaptcha = checkCaptcha(msg.chat.id, msg.text)
 				if (isPassCaptcha) {
 					await bot.sendMessage(msg.chat.id, 
 						"DefiBank Tasks:\n" +
 						`🔸 <a href='https://t.me/${TELEGRAM_CHANNEL}'>DefiBank Telegram Channel</a>\n` +
 						`🔸 <a href='https://t.me/${TELEGRAM_GROUP}'>DefiBank Community</a>\n` +
-						`🔸 <a href='https://twitter.com/${TWITTER}'>DefiBank Twitter</a>` +
+						`🔸 <a href='https://twitter.com/${TWITTER}'>DefiBank Twitter</a>\n` +
+						`🔸 <a href='${PINNED_TWEET_URL}'>Like, retweet and tag 3 friends in the comment section</a>` +
 						"\nPress Confirm after completing all tasks!"
 						,{
 						parse_mode:"HTML",
