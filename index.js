@@ -337,11 +337,35 @@ bot.on("callback_query", async(data)=>{
 bot.onText(/\/check/, async(msg, match) => {
 	if(msg.chat.username === DEV || msg.chat.username === ADMIN){
 		const allUsers = await getAllUsers();
+		
+		// const exportUsers = await allUsers.map( async (user) => {
+		// 	const total = await countRefer(user.telegramId)
+		// 	return Object.assign({}, user, {invitedPeople: total})
+		// })
+
+		// const myPromise = new Promise((resolve, reject) => {
+		// 	setTimeout(() => {
+		// 		resolve('foo');
+		// 	}, 300);
+		// });
+
+		// let exportUsers = []
+		// allUsers.forEach(async(user => {
+		// 	const total = await countRefer(user.telegramId)
+		// 	exportUsers.push("1");
+		// 	user.total = 1;
+		// 	// exportUsers.push(Object.assign({}, user, {invitedPeople: total}))
+		// });
+		
+		// myPromise.then(promises, handleRejectedA)
+
+		// console.log("hello",exportUsers)
+		
 		const fields = ['telegramId','username','twitterUsername',
 										'addressWallet','referBy','isJoinedTelegrams',
 										'isFollowTwitter','isFollowTwitterParter','isLikeTweet','isRetweet'];
 		const opt = {fields}
-		const csv = parse(allUsers, opt);
+		const csv = parse(exportUsers, opt);
 		
 		const fileName = `exportDB-${Math.round(+new Date()/1000)}.csv`;
 		fs.writeFile(`./data/${fileName}`, csv, (err) => {
