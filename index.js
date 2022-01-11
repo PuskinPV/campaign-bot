@@ -162,10 +162,10 @@ bot.onText(/.*/, async(msg, match) => {
 				const isPassCaptcha = checkCaptcha(msg.chat.id, msg.text)
 				if (isPassCaptcha) {
 					await bot.sendMessage(msg.chat.id, 
-						"DefiBank Tasks:\n" +
-						`🔸 <a href='https://t.me/${TELEGRAM_CHANNEL}'>DefiBank Telegram Channel</a>\n` +
-						`🔸 <a href='https://t.me/${TELEGRAM_GROUP}'>DefiBank Community</a>\n` +
-						`🔸 <a href='https://twitter.com/${TWITTER}'>DefiBank Twitter</a>\n` +
+						"DarkCrypto Tasks:\n" +
+						`🔸 <a href='https://t.me/${TELEGRAM_CHANNEL}'>DarkCrypto Telegram Channel</a>\n` +
+						`🔸 <a href='https://t.me/${TELEGRAM_GROUP}'>DarkCrypto Community</a>\n` +
+						`🔸 <a href='https://twitter.com/${TWITTER}'>DarkCrypto Twitter</a>\n` +
 						`🔸 <a href='${PINNED_TWEET_URL}'>Like, retweet and tag 3 friends in the comment section</a>` +
 						"\nPress Confirm after completing all tasks!"
 						,{
@@ -177,22 +177,7 @@ bot.onText(/.*/, async(msg, match) => {
 							],
 						}
 						})
-					// await bot.sendMessage(msg.chat.id, 
-					// 	"BSCStation's Tasks:\n" +
-					// 	`🔸 <a href='https://t.me/${PARTNER_TELEGRAM_CHANNEL}'>BSCStation's Telegram Channel</a>\n` +
-					// 	`🔸 <a href='https://t.me/${PARTNER_TELEGRAM_GROUP}'>BSCStation's Community</a>\n` +
-					// 	`🔸 <a href='https://twitter.com/${PARTNER_TWITTER}'>BSCStation's Twitter</a>\n` +
-					// 	`🔸 <a href='${PINNED_TWEET_URL}'>Retweet + Share + Tag 3 friends</a>` +
-					// 	"\nPress Confirm after completing all tasks!"
-					// ,{
-					// 	parse_mode:"HTML",
-					// 	disable_web_page_preview: true,
-					// 	reply_markup:{
-					// 		inline_keyboard:[
-					// 			[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
-					// 		],
-					// 	}
-					// });
+
 
 					setUserState(msg.chat.id, STATE.JOIN_IN);
 
@@ -234,7 +219,7 @@ bot.onText(/.*/, async(msg, match) => {
 							})
 
 							// Next step
-							bot.sendMessage(msg.chat.id, 'Send your Binance Smart Chain (BEP20) wallet address. (Do not send address from exchange)')
+							bot.sendMessage(msg.chat.id, 'Send your Cronos Smart Chain (CRC20) wallet address. (Do not send address from exchange)')
 							setUserState(msg.chat.id, STATE.WALLET)
 						}
 						break
@@ -256,7 +241,7 @@ bot.onText(/.*/, async(msg, match) => {
 						//TODO: button ACCOUNT and USEFULL LINK
 						bot.sendMessage(msg.chat.id, 
 							'🎉 <b>Congratulations</b>! 🎉\n' +
-							'You have completed the <b>DefiBank Campaign</b>.\n' +
+							'You have completed the <b>DarkCrypto Campaign</b>.\n' +
 							'Tasks completion will be checked again before result. ' +
 							'Fake/bots will be rejected.\n\n' +
 							'👇 Your Referral Link 👇\n' +
@@ -270,7 +255,7 @@ bot.onText(/.*/, async(msg, match) => {
 						break
 					}
 				}
-				bot.sendMessage(msg.chat.id, '❌ Invalid BEP20 wallet address, please send correct BEP20 wallet address.')
+				bot.sendMessage(msg.chat.id, '❌ Invalid CRC20 wallet address, please send correct CRC20 wallet address.')
 				break
 
 			default:
