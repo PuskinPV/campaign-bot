@@ -25,6 +25,7 @@ const {
 	PINNED_TWEET_URL,
 	DEV,
 	ADMIN,
+	WEBSITE
 } = process.env
 
 // Import constants
@@ -54,7 +55,7 @@ const member = {
 	isRegard: false,
 	isJoinedTelegrams: false,
 	isFollowTwitter: false,
-	isFollowTwitterParter: false,
+	isFollowTwitterPartner: false,
 	isLikeTweet: false,
 	isRetweet: false
 };
@@ -63,7 +64,7 @@ const member = {
 const bot = new TelegramBot(BOT_TOKEN, {polling: true});
 
 // Fields
-const TELEGRAM_LIST = [`@${TELEGRAM_GROUP}`, `@${TELEGRAM_CHANNEL}`, `@${PARTNER_TELEGRAM_GROUP}`, `@${PARTNER_TELEGRAM_CHANNEL}`];
+const TELEGRAM_LIST = [`@${TELEGRAM_GROUP}`, `@${TELEGRAM_CHANNEL}`];
 
 const STATE = {
 	'START': 0,
@@ -121,13 +122,12 @@ const checkWalletAddress = (address) => {
 	return isValid;
 }
 
-const checkCaptcha = (a, b, result) => {
-	// console.log(a + b, result, a + b == result)
-	return a + b == result;
+const checkCaptcha = (telegramId, result) => {
+	console.log(pendingCaptchas)
+	return pendingCaptchas[telegramId] == result;
 }
-let a = Math.floor(Math.random() * 10);
-let b = Math.floor(Math.random() * 10);
 
+const pendingCaptchas = {}
 
 bot.onText(/.*/, async(msg, match) => {
 	// let state = await getUserState(msg.chat.id)
@@ -145,6 +145,7 @@ bot.onText(/.*/, async(msg, match) => {
 		
 		a = Math.floor(Math.random() * 10);
 		b = Math.floor(Math.random() * 10);
+		pendingCaptchas[msg.chat.id] = a + b
 		bot.sendMessage(msg.chat.id, `${a} + ${b} = ?`,{
 			reply_markup: {
 				remove_keyboard:true
@@ -158,26 +159,16 @@ bot.onText(/.*/, async(msg, match) => {
 			// Handle Captcha (state 1)
 			case STATE.CAPTCHA:
 				// Check Captcha
-				const isPassCaptcha = checkCaptcha(a, b, msg.text)
+				const isPassCaptcha = checkCaptcha(msg.chat.id, msg.text)
 				if (isPassCaptcha) {
 					await bot.sendMessage(msg.chat.id, 
-						"Metaracers' Tasks:\n" +
-						`🔹️ <a href='https://t.me/${TELEGRAM_CHANNEL}'>Metaracers' Telegram Channel</a>\n` +
-						`🔹️ <a href='https://t.me/${TELEGRAM_GROUP}'>Metaracers' Community</a>\n` +
-						`🔹️ <a href='https://twitter.com/${TWITTER}'>Metaracers' Twitter</a>` +
+						"DefiBank Tasks:\n" +
+						`🔸 <a href='https://t.me/${TELEGRAM_CHANNEL}'>DefiBank Telegram Channel</a>\n` +
+						`🔸 <a href='https://t.me/${TELEGRAM_GROUP}'>DefiBank Community</a>\n` +
+						`🔸 <a href='https://twitter.com/${TWITTER}'>DefiBank Twitter</a>\n` +
+						`🔸 <a href='${PINNED_TWEET_URL}'>Like, retweet and tag 3 friends in the comment section</a>` +
 						"\nPress Confirm after completing all tasks!"
 						,{
-							parse_mode: "HTML",
-							disable_web_page_preview: true
-						})
-					await bot.sendMessage(msg.chat.id, 
-						"BSCStation's Tasks:\n" +
-						`🔹️ <a href='https://t.me/${PARTNER_TELEGRAM_CHANNEL}'>BSCStation's Telegram Channel</a>\n` +
-						`🔹️ <a href='https://t.me/${PARTNER_TELEGRAM_GROUP}'>BSCStation's Community</a>\n` +
-						`🔹️ <a href='https://twitter.com/${PARTNER_TWITTER}'>BSCStation's Twitter</a>\n` +
-						`🔹️ <a href='${PINNED_TWEET_URL}'>Retweet + Share + Tag 3 friends</a>` +
-						"\nPress Confirm after completing all tasks!"
-					,{
 						parse_mode:"HTML",
 						disable_web_page_preview: true,
 						reply_markup:{
@@ -185,7 +176,23 @@ bot.onText(/.*/, async(msg, match) => {
 								[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
 							],
 						}
-					});
+						})
+					// await bot.sendMessage(msg.chat.id, 
+					// 	"BSCStation's Tasks:\n" +
+					// 	`🔸 <a href='https://t.me/${PARTNER_TELEGRAM_CHANNEL}'>BSCStation's Telegram Channel</a>\n` +
+					// 	`🔸 <a href='https://t.me/${PARTNER_TELEGRAM_GROUP}'>BSCStation's Community</a>\n` +
+					// 	`🔸 <a href='https://twitter.com/${PARTNER_TWITTER}'>BSCStation's Twitter</a>\n` +
+					// 	`🔸 <a href='${PINNED_TWEET_URL}'>Retweet + Share + Tag 3 friends</a>` +
+					// 	"\nPress Confirm after completing all tasks!"
+					// ,{
+					// 	parse_mode:"HTML",
+					// 	disable_web_page_preview: true,
+					// 	reply_markup:{
+					// 		inline_keyboard:[
+					// 			[{ text: 'Confirm ✅ ', callback_data: 'CONFIRM' }]
+					// 		],
+					// 	}
+					// });
 
 					setUserState(msg.chat.id, STATE.JOIN_IN);
 
@@ -249,7 +256,7 @@ bot.onText(/.*/, async(msg, match) => {
 						//TODO: button ACCOUNT and USEFULL LINK
 						bot.sendMessage(msg.chat.id, 
 							'🎉 <b>Congratulations</b>! 🎉\n' +
-							'You have completed the <b>Metaracers x BSCStation Campaign</b>.\n' +
+							'You have completed the <b>DefiBank Campaign</b>.\n' +
 							'Tasks completion will be checked again before result. ' +
 							'Fake/bots will be rejected.\n\n' +
 							'👇 Your Referral Link 👇\n' +
@@ -286,10 +293,10 @@ bot.onText(/.*/, async(msg, match) => {
 					}
 				} else if (REGEX_FLOW.USEFUL_LINKS.test(msg.text)) {
 					bot.sendMessage(msg.chat.id, 
-						`<b>Website: </b>https://www.meta-racers.com\n` +
-						`<b>Twitter: </b>https://twitter.com/MetaRacersBsc\n` +
-						`<b>Telegram Channel : </b>https://t.me/MetaRacersbsc_official\n` +
-						`<b>Telegram Group: </b>https://t.me/MetaRacersBsc_Global\n`
+						`<b>Website: </b>${WEBSITE}\n` +
+						`<b>Twitter: </b>https://twitter.com/${TWITTER}\n` +
+						`<b>Telegram Channel : </b>https://t.me/${TELEGRAM_CHANNEL}\n` +
+						`<b>Telegram Group: </b>https://t.me/${TELEGRAM_GROUP}\n`
 					,
 					{
 						parse_mode: "HTML"
@@ -314,7 +321,7 @@ bot.on("callback_query", async(data)=>{
 					isJoinedTelegrams: true,
 					// Will be checked again before result
 					isFollowTwitter: true,
-					isFollowTwitterParter: true,
+					isFollowTwitterPartner: true,
 					isLikeTweet: true,
 					isRetweet: true
 				})
@@ -363,11 +370,14 @@ bot.onText(/\/check/, async(msg, match) => {
 		
 		const fields = ['telegramId','username','twitterUsername',
 										'addressWallet','referBy','isJoinedTelegrams',
-										'isFollowTwitter','isFollowTwitterParter','isLikeTweet','isRetweet'];
+										'isFollowTwitter','isFollowTwitterPartner','isLikeTweet','isRetweet'];
 		const opt = {fields}
 		const csv = parse(exportUsers, opt);
 		
 		const fileName = `exportDB-${Math.round(+new Date()/1000)}.csv`;
+		if (!fs.existsSync('data')) {
+			fs.mkdirSync('data')
+		}
 		fs.writeFile(`./data/${fileName}`, csv, (err) => {
 			if (err) { console.error(err) }
 			
